@@ -1,0 +1,26 @@
+(Sample Program G28EX111:)
+(Workpiece Size: X4, Y4, Z1)
+(Tools: Tool #7, 1" Slot Drill)
+(Tool #10, 1/2" HSS Drill)
+(Tool Start Position: X0, Y0, Z1)
+(Reference Point: X0, Y0, Z5 )
+
+N2 G90 G80 G40 G54 G20 G17 G50 G94 G64 (safety block)
+N5 G90 G20
+N10 M06 T7 G43 H7
+N12 M03 S1000
+N15 G00 X4.75 Y2
+N17 Z0.1
+N20 G01 Z-0.5 F5
+N25 G01 X2 F10
+N30 G00 Z0.25
+N35 G28 X0 Y2.5 Z1 (Return to reference via X0,Y2.5,Z1)
+N40 M06 T10 G43 H10
+N45 M03 S2000
+N50 G00 X2 Y2
+N52 Z.5
+N55 G01 Z-1.25 F5
+N60 G00 Z1
+N65 X0 Y0
+N70 M05
+N75 M30

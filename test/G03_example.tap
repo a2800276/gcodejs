@@ -1,0 +1,27 @@
+(Sample Program G03EX4.)
+(Workpiece Size: X4, Y4, Z0.25)
+(Tool: Tool #2, 1/4" Slot Drill )
+(Tool Start Position: X0, Y0, Z1)
+
+N2 G90 G80 G40 G54 G20 G17 G50 G94 G64 (safety block)
+N5 G90 G20
+N10 M06 T2 G43 H2
+N15 M03 S1200
+N20 G00 X2 Y0.5
+N25 Z0.125
+N30 G01 Z-0.125 F5
+N35 X3 F15
+N40 G03 X3.5 Y1 R0.5 (G03 arc using R value)
+N45 G01 Y3
+N50 G03 X3 Y3.5 I-0.5 J0 (G03 arc using I and J)
+N55 G01 X2
+N60 G03 X2 Y1.5 I0 J-1 (180° arc using I and J)
+N65 G01 Y0.5
+N70 G00 Z0.1
+N75 X1.5 Y2.5
+N80 G01 Z-0.25 F5
+N85 G03 X1.5 Y2.5 I0.5 J0 (Full circle using I and J)
+N90 G00 Z1
+N95 X0 Y0
+N100 M05
+N105 M30

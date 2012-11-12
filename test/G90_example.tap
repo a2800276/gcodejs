@@ -1,0 +1,20 @@
+(Sample Program G90EX21:)
+(Workpiece Size: X4, Y3, Z1)
+(Tool: Tool #2, 1/2" Slot Drill)
+(Tool Start Position: X0, Y0, Z1)
+
+N2 G90 G80 G40 G54 G20 G17 G50 G94 G64 (safety block)
+N5 G90 G20 (Set to absolute mode)
+N10 M06 T2 G43 H2
+N12 M03 S1200
+N15 G00 X1 Y1
+N20 Z0.125
+N25 G01 Z-0.125 F5
+N30 X3
+N35 Y2
+N40 X1
+N45 Y1
+N50 G00 Z1
+N55 X0 Y0
+N60 M05
+N65 M30

@@ -1,0 +1,18 @@
+(Sample Program G17EX6:)
+(Workpiece Size: X3, Y2, Z1)
+(Tool: Tool #4, 1/2" Slot Drill)
+(Tool Start Position: X0, Y0, Z1)
+
+N2 G90 G80 G40 G54 G20 G17 G50 G94 G64 (safety block)
+N5 G90 G20 G17 (Set XY plane)
+N10 M06 T4 G43 H4
+N15 M03 S1200
+N20 G00 X2 Y1 
+N25 Z0.125
+N30 G01 Z-0.05 F5
+N35 G02 X1 R1 F10
+N40 G00 Z1
+N45 X0 Y0
+N50 M05
+N55 M30
+

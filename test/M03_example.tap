@@ -1,0 +1,19 @@
+(Sample Program M03EX4:)
+(Workpiece Size: X4, Y3, Z1)
+(Tool: Tool #2, 1/4" Slot Drill)
+(Tool Start Position: X0, Y0, Z1)
+
+N2 G90 G80 G40 G54 G20 G17 G50 G94 G64 (safety block)
+N5 G90 G20
+N10 M06 T2 G43 H2
+N15 M03 S1200 (Spindle on clockwise)
+N20 G00 X1 Y1
+N25 Z0.25
+N30 G01 Z-0.1 F5
+N35 X3 F20
+N40 X1 Y2 Z-0.5
+N45 G19 G02 Y1 Z-0.1 J-0.5 K0.2
+N40 G17 G00 Z1
+N45 X0 Y0
+N50 M05
+N55 M30

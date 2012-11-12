@@ -1,0 +1,24 @@
+(Sample Program M30EX13:)
+(Workpiece Size: X4, Y3, Z1)
+(Tool: Tool #2, 1/4" Slot Drill)
+(Tool Start Position: X0, Y0, Z1)
+
+N2 G90 G80 G40 G54 G20 G17 G50 G94 G64 (safety block)
+N5 G90 G20
+N10 M06 T2 G43 H2
+N15 M03 S1200
+N20 G00 X0.5 Y1.25
+N25 Z0.1
+N30 G01 Z-0.25 F5
+N35 G91 G02 X0.5 Y-0.5 R0.5 F15
+N40 X0.5 Y-0.5 R0.5
+N45 X1 I0.5
+N50 X0.5 Y0.5 I0.5
+N55 X0.5 Y0.5 I0.5
+N60 G03 X-3 I-1.5
+N60 G00 Z1
+N65 X0 Y0
+N70 M05
+N75 M30 (Program end; reset to start)
+
+

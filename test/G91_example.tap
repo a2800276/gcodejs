@@ -1,0 +1,21 @@
+(Sample Program G91EX22:)
+(Workpiece Size: X4, Y3, Z1)
+(Tool: Tool #2, 1/4" Slot Drill)
+(Tool Start Position: X0, Y0, Z1)
+
+N2 G90 G80 G40 G54 G20 G17 G50 G94 G64 (safety block)
+N5 G90 G20
+N10 M06 T2 G43 H2
+N15 M03 S1200
+N20 G00 X1 Y1
+N25 Z0.125
+N30 G01 Z-0.125 F5
+N35 G91 X1 Y1 (Set to incremental mode)
+N40 Y-1
+N45 X1
+N50 Y1
+N55 G90 G00 Z1
+N60 X0 Y0
+N65 M05
+N70 M30
+

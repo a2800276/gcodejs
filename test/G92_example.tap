@@ -1,0 +1,29 @@
+(Sample Program G92EX23:)
+(Workpiece Size: X3.5, Y2.5, Z0.75)
+(Tool: Tool #2, 1/4" Slot Drill)
+(Tool Start Position: X0, Y0, Z1)
+
+N2 G90 G80 G40 G54 G20 G17 G50 G94 G64 (safety block)
+N5 G90 G20
+N10 M06 T2 G43 H2
+N15 M03 S1200
+N20 G00 X0.5 Y0.5
+N25 Z0.1
+N30 G01 Z-0.25 F5
+N35 G02 X0.5 Y0.5 I0.25 J0.25 F25
+N40 G00 Z0.125
+N45 X1.5 Y1.5
+N50 G92 X0.5 Y0.5 (Reassign coordinates)
+N55 G01 Z-0.25 F5
+N60 G02 X0.5 Y0.5 I0.25 J0.25 F20
+N65 G00 Z0.1
+N70 X1.5 Y-0.5
+N75 G92 X0.5 Y0.5 (Reassign coordinates)
+N80 G01 Z-0.25 F5
+N85 G02 X0.5 Y0.5 I0.25 J0.25 F15
+N90 G00 Z1
+N95 X-2 Y0
+N100 G92 X0 Y0 (Reassign coordinates)
+N105 M05
+N110 M30
+

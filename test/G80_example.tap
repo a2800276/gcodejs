@@ -1,0 +1,17 @@
+(Sample Program G80EX17:)
+(Workpiece Size: X4, Y3, Z1)
+(Tool: Tool #5, 5/8" HSS Drill)
+(Tool Start Position: X0, Y0, Z1)
+
+N2 G90 G80 G40 G54 G20 G17 G50 G94 G64 (safety block)
+N5 G90 G80 G20 (Canned cycle cancel)
+N10 M06 T5 G43 H5
+N15 M03 S1450
+N20 G00 X1.0 Y1.0
+N25 G81 Z-0.5 R0.125 F10.0
+N30 X2.0
+N35 X3.0
+N40 G80 G00 Z1.0 (Canned cycle cancel)
+N45 X0 Y0
+N50 M05
+N55 M30

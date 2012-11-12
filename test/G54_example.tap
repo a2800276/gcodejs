@@ -1,0 +1,30 @@
+(Sample Program G54EX19:)
+(Workpiece Size: X8, Y5, Z2)
+(Tool: Tool #6, 3/4" HSS Drill)
+(Tool Start Position: X0, Y0, Z1)
+(Workpiece Coordinate system 2: X1, Y1, Z0)
+(Workpiece Coordinate system 3: X5, Y1, Z0)
+
+N2 G90 G80 G40 G54 G20 G17 G50 G94 G64 (safety block)
+N5 G90 G80 G20
+N10 M06 T6 G43 H6
+N15 M03 S1300
+N20 G55 G00 X1.0 Y1.0 (Rapid to X1, Y1 of work coordinate system 2)
+N25 Z0.5
+N30 G82 Z-0.25 R0.125 P1 F5
+N35 Y2
+N40 X2
+N45 Y1
+N50 X1.5 Y1.5
+N60 G80 G00 Z1
+N65 G56 G00 X1.0 Y1.0 (Rapid to X1, Y1 of work coordinate system 3)
+N70 Z0.5
+N75 G82 Z-0.25 R0.125 P1 F5
+N80 Y2
+N85 X2
+N90 Y1
+N95 X1.5 Y1.5
+N100 G80 G00 Z1
+N105 X0 Y0
+N110 M05
+N115 M30

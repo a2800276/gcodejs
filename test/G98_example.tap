@@ -1,0 +1,19 @@
+(Sample Program G98EX24:)
+(Workpiece Size: X3, Y3, Z1)
+(Tool: Tool #3, 3/8" HSS Drill)
+(Tool Start Position: X0, Y0, Z1)
+
+N2 G90 G80 G40 G54 G20 G17 G50 G94 G64 (safety block)
+N5 G90 G80 G20
+N10 M06 T3 G43 H3
+N15 M03 S1200
+N20 G00 X1 Y1
+N25 Z0.5
+N30 G98 G81 Z-0.25 R0.25 F3 (Set initial plane to Z0.5)
+N35 X2
+N40 Y2
+N45 X1
+N50 G80 G00 Z1
+N52 X0 Y0
+N55 M05
+N60 M30

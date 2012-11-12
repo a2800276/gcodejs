@@ -1,0 +1,35 @@
+(Sample Program M06EX6:)
+(Workpiece Size: X4, Y3, Z1)
+(Tool: Tool #8, 3/4" HSS Drill)
+(Tool #9, 3/4" End Mill)
+(Tool Start Position: X0, Y0, Z1)
+
+N2 G90 G80 G40 G54 G20 G17 G50 G94 G64 (safety block)
+N5 G90 G20
+N7 M998
+N10 M06 T8 G43 H8(Tool change to Tool #8 end mill)
+N15 M03 S1000
+N20 G00 X0.75 Y1.5
+N25 Z0.1
+N30 G01 Z-0.5 F2.5
+N35 G00 Z0.1
+N40 X2.5
+N45 G01 Z-0.5
+N50 G00 Z1
+N55 X0 Y0
+N57 M998
+N60 M06 T9 G43 H9 (Tool change to Tool #9 3/4" end mill)
+N62 M03 S1000
+N65 X0.75 Y1.5
+N70 Z0.1
+N75 G01 Z-0.5 F5
+N80 G02 I0.375 J0 F15
+N85 G00 Z0.1
+N90 X2.5
+N95 G01 Z-0.5 F5
+N100 G02 I0.375 J0 F15
+N105 G00 Z1
+N110 X0 Y0
+N115 M05
+N120 M30
+

@@ -1,0 +1,20 @@
+(Sample Program G19EX8:)
+(Workpiece Size: X2, Y2, Z1)
+(Tool: Tool #2, 1/4" Slot Mill)
+(Tool Start Position: X0, Y0, Z1)
+
+N2 G90 G80 G40 G54 G20 G17 G50 G94 G64 (safety block)
+N5 G90 G20 G17 (Set XY Plane)
+N10 M06 T2 G43 H2
+N15 M03 S1200
+N20 G00 X0 Y0
+N25 Z0.1
+N30 G01 Z0 F5
+N35 G19 G03 Y1 Z0 J0.5 K0 (Set YZ plane)
+N40 G01 X1.5 Y2 F10
+N45 G02 Y0 Z0 J-1 K0 F5
+N50 G00 Z1
+N55 X0 Y0
+N60 M05
+N65 M30
+
