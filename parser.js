@@ -2,15 +2,54 @@
 var EVENTS = {
    BLOCK_START : "BLOCK_START"
   ,BLOCK_END   : "BLOCK_END"
+  ,BLOCK_DEL   : "BLOCK_DEL"
   ,WORD        : "WORD"
   ,COMMENT     : "COMMENT"
   ,ERROR       : "ERROR"
 }
 
-var CONST = {
+var ABC = {
    A : "A".charCodeAt(0)
+  ,B : "B".charCodeAt(0)
+  ,C : "C".charCodeAt(0)
+  ,D : "D".charCodeAt(0)
+  ,E : "E".charCodeAt(0)
+  ,F : "F".charCodeAt(0)
+  ,G : "G".charCodeAt(0)
+  ,H : "H".charCodeAt(0)
+  ,I : "I".charCodeAt(0)
+  ,J : "J".charCodeAt(0)
+  ,K : "K".charCodeAt(0)
+  ,L : "L".charCodeAt(0)
+  ,M : "M".charCodeAt(0)
+  ,N : "N".charCodeAt(0)
+  ,O : "O".charCodeAt(0)
+  ,P : "P".charCodeAt(0)
+  ,Q : "Q".charCodeAt(0)
+  ,R : "R".charCodeAt(0)
+  ,S : "S".charCodeAt(0)
+  ,T : "T".charCodeAt(0)
+  ,U : "U".charCodeAt(0)
+  ,V : "V".charCodeAt(0)
+  ,W : "W".charCodeAt(0)
+  ,X : "X".charCodeAt(0)
+  ,Y : "Y".charCodeAt(0)
   ,Z : "Z".charCodeAt(0)
-  ,re_num: /^[\d-+\.]+$/
+  ,ZERO: "0".charCodeAt(0)
+  ,NINE: "9".charCodeAt(0)
+  ,DOT: ".".charCodeAt(0)
+  ,MINUS: "-".charCodeAt(0)
+  ,CR: "\r".charCodeAt(0)
+  ,LF: "\n".charCodeAt(0)
+  ,SPACE: " ".charCodeAt(0)
+  ,SLASH: "/".charCodeAt(0)
+  ,OPARENS: "(".charCodeAt(0)
+  ,CPARENS: ")".charCodeAt(0)
+  ,SEMI: ";".charCodeAt(0)
+}
+
+var CONST = {
+   re_num: /^[\d-+\.]+$/
   ,re_pcom: /\(([^)]*)\)/  // comments in parens
   ,re_scom: /;(.*)$/        // comments ; semicolon to end of line
 }
@@ -140,50 +179,85 @@ function toLines(data) {
   var l = trim(data.toString())
   return l.split(/[\r\n]+/)
 }
-
+var STATE = {
+   START : 0
+  ,WORD  : 1
+  ,PCOMMENT: 2
+  ,SCOMMENT: 3
+  ,LF: 4
+  ,VALUE_START:5
+  ,VALUE: 6
+  ,VALUE_POST_DOT:7
+}
 var GCode = function (cb, halt_on_error) {
   var self = this
 
-  var cb = cb
+  var cb = new CB(cb).callback
   var halt_on_error = halt_on_error
 
-  var line_no
+  var line_no=0
+  var state = STATE.START
+  var comment = ""
+  var cmd = ""
+  var value = ""
+
   function error(msg) {
     cb({
-       ev   : EVENTS.ERROR
-      ,line : line_no+1
-      ,msg  : msg
+       ev      : EVENTS.ERROR
+      ,line_no : line_no+1
+      ,msg     : msg
+      ,state   : state
     }) 
   }
-  function handleComments(line) {
-    var comments = []
-    var m = line.match(CONST.re_scom)
-    if (m) {
-      comments.push(m[1])
-      line = line.replace(CONST.re_scom, '')
-    }
-    while ( m = line.match(CONST.re_pcom)) {
-      comments.push(m[1])
-      line = line.replace(CONST.re_pcom, '')
-    }
-    comments.forEach(function(comment){
-      cb({
-         ev: EVENTS.COMMENT
-        ,comment: comment
-      })
+  function cb_comment () {
+    cb({
+       ev: EVENTS.COMMENT
+      ,line_no: line_no+1
+      ,comment: comment
     })
-    return line.length != 0 ? trim(line) : null 
+    comment = ""
   }
+  function word() {
+    cb({
+       ev:   EVENTS.WORD
+      ,code: cmd
+      ,value: parseFloat(value)
+      ,line_no: line_no+1
+    }) 
+    cmd = ""
+    value = ""
+  }
+
 
   this.parse = function parse(data) {
 
-    function checkUpcaseAtoZ(letter) {
-      var c = letter.charCodeAt(0)
-      if (CONST.A <= c && c <= CONST.Z) {
+    function isUpcaseAtoZ(letter) {
+      if (ABC.A <= letter && letter <= ABC.Z) {
         return true
       }
-      error("invalid code: "+letter)
       return false
+    }
+
+    function isDigit(letter) {
+      if (ABC.ZERO <= letter && letter <= ABC.NINE) {
+        return true
+      }
+      return false
+    }
+
+    function isSpace(letter) {
+      if (letter === ABC.SPACE || letter === ABC.TAB) {
+        return true;
+      }
+      return false
+    }
+
+    function check(should, is) {
+      if (!should === is) {
+        error("unexpected: "+is+" expected:"+should)
+        return false
+      }
+      return true
     }
     
     function checkValue(value) {
@@ -193,43 +267,233 @@ var GCode = function (cb, halt_on_error) {
       error("invalid value: "+value)
       return false
     }
+    
+    data = data.toString()
 
-    var lines = toLines(data)
-LOOPLINES:
-    for (var i = 0 ; i != lines.length ; ++i) {
-      line_no = i
-      var line = lines[i]
-      cb({
-         ev:   EVENTS.BLOCK_START
-        ,line: line
-      })
+    for (var i =0; i!=data.length; ++i) {
+      var b = data.charCodeAt(i),
+          b_ = data[i]
+      switch(state) {
+        case STATE.START:
+          cb({ev:     EVENTS.BLOCK_START,
+              line_no:line_no + 1})
+          switch(true) {
+            case isSpace(b):
+              break;
+            case b === ABC.SLASH:
+              cb({
+                ev: EVENTS.BLOCK_DEL,
+                line_no: line_no+1
+              })
+              state = STATE.WORD
+              break
+            case b === ABC.OPARENS:
+              state = STATE.PCOMMENT
+              break
+            case b === ABC.SEMI:
+              state = STATE.SCOMMENT
+              break
+            case b === ABC.CR:
+              state = STATE.LF
+              break
+            case b === ABC.LF:
+              state = STATE.LF
+              i--
+              continue
+            case isUpcaseAtoZ(b):
+              state = STATE.WORD
+              i--
+              continue
+            default:
+               error("unexpected: "+b_)
+               if (halt_on_error) {
+                return
+               }
+          }
+          break // STATE.START
+        case STATE.WORD:
+          switch (true) {
+            case isUpcaseAtoZ(b):
+              cmd = String.fromCharCode(b)
+              state = STATE.VALUE_START
+              value = ""
+              break
+            case b === ABC.OPARENS:
+              state = STATE.PCOMMENT
+              break
+            case b === ABC.SEMI:
+              state = STATE.SCOMMENT
+              break
+            case b === ABC.CR:
+              state = STATE.LF
+              break
+            case b === ABC.LF:
+              state = STATE.LF
+              i--
+              continue
+            default:
+              error("unexpected: "+b_)
+              if (halt_on_error) {
+                return
+              }
+          }
+          break
 
-      if (! (line = handleComments(line)) ) {
-        continue LOOPLINES
-      }
+        case STATE.PCOMMENT:
+          switch(b) {
+            case ABC.OPARENS:
+              error("nested comment")
+              if (halt_on_error) {
+                return
+              }
+              break
+            case ABC.CPARENS:
+              cb_comment()
+              state = STATE.WORD
+              break
+            default:
+              comment += String.fromCharCode(b)
+          }
+          break
 
-      var words = line.split(/\s+/)
-     
-      for (var j = 0; j!= words.length; ++j) {
-        var word = words[j]
-        var letter = word[0]
-        if (!checkUpcaseAtoZ(letter) && halt_on_error) {
-          break LOOPLINES
-        }
-        var value = word.substr(1,word.length)
-        if (!checkValue(value) && halt_on_error) {
-          break LOOPLINES
-        }
-        cb({
-           ev:   EVENTS.WORD
-          ,code: letter
-          ,value:parseFloat(value)
-        })
-      }
-      cb({ev: EVENTS.BLOCK_END})
-    }
-  }
+        case STATE.SCOMMENT:
+          // semicolon comments extend to end of line...
+          switch(b) {
+            case ABC.CR:
+              comment()
+              state = STATE.LF
+              break
+            case ABC.LF:
+              comment()
+              state = STATE.LF
+              i--
+              continue
+            default:
+              comment+=String.fromCharCode(b)
+
+          }
+          break
+
+        case STATE.LF:
+          if (!check(ABC.LF, b)){
+            if(halt_on_error) {
+              return
+            }
+            // if we're not halting on err, there was
+            // only a \r, so some sort of newline, rewind and
+            // goto STATE.START
+            --i
+          }
+          cb({
+            ev: EVENTS.BLOCK_END,
+            line_no: line_no+1
+          })
+          line_no++
+          state = STATE.START
+          break
+
+        case STATE.VALUE_START:
+          switch(true) {
+            case isSpace(b):
+              break
+            case b === ABC.MINUS:
+            case isDigit(b):
+              value += String.fromCharCode(b)
+              state = STATE.VALUE
+              break
+            case b === ABC.DOT:
+              value += String.fromCharCode(b)
+              state = STATE.VALUE_POST_DOT
+              break
+            default:
+              error("not a valid value: "+String.fromCharCode(b))
+          }
+          break
+
+        case STATE.VALUE:
+          switch(true) {
+            case isSpace(b):
+              break
+            case isDigit(b):
+              value += String.fromCharCode(b)
+              state = STATE.VALUE
+              break
+            case b === ABC.DOT:
+              value += String.fromCharCode(b)
+              state = STATE.VALUE_POST_DOT
+              break
+            case b === ABC.CR:
+              word()
+              state = STATE.LF
+              break
+            case b === ABC.LF:
+              word()
+              state = STATE.LF
+              i--
+              continue
+            case isUpcaseAtoZ(b):
+              word()
+              state = STATE.WORD
+              i--
+              continue
+            case b === ABC.OPARENS:
+              word()
+              state = STATE.PCOMMENT
+              break
+            case b === ABC.SEMI:
+              word()
+              state = STATE.SCOMMENT
+              break
+            default:
+              error("not a valid value: "+String.fromCharCode(b))
+          }
+          break
+
+        case STATE.VALUE_POST_DOT:
+          switch(true) {
+            case isSpace(b):
+              break
+            case isDigit(b):
+              value += String.fromCharCode(b)
+              state = STATE.VALUE
+              break
+            case b === ABC.CR:
+              word()
+              state = STATE.LF
+              break
+            case b === ABC.LF:
+              word()
+              state = STATE.LF
+              i--
+              continue
+            case isUpcaseAtoZ(b):
+              word()
+              state = STATE.WORD
+              i--
+              continue
+           case b === ABC.OPARENS:
+              word()
+              state = STATE.PCOMMENT
+              break
+            case b === ABC.SEMI:
+              word()
+              state = STATE.SCOMMENT
+              break
+            default:
+              error("not a valid value: "+String.fromCharCode(b))
+          }
+          break
+        default:
+          error("invalid state:"+state)
+      } // switch state
+
+    } // for
+  } // parse
 }
+
+      
+     
+
 var p = console.log
 
 
@@ -341,28 +605,12 @@ var CB = function (cb) {
 }
 
 
-//console.log(process.argv.pop())
-var fn = process.argv.pop()
-var fs = require("fs")
-var data = fs.readFileSync(fn)
 
 
-function check (code) {
-  if (code.ev == EVENTS.BLOCK_START) {
-    p(code.line)
-  } else if (code.ev == EVENTS.WORD) {
-    if (code.code === "N") {
-    } else {
-      p("  not supported: "+code.code+""+code.value+"("+code.desc+")")
-    }
-  }
-}
 
-var cb = new CB(check)
 
-var parser = new GCode(cb.callback)
-parser.parse(data)
 
-exports.GCode = GCode
+exports.GCode  = GCode
+exports.Events = EVENTS
 
 
