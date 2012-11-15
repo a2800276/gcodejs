@@ -138,4 +138,5 @@ var p = console.log
 var driver = new Driver()
 
 var parser = new GCode(driver.callback)
+console.log(data)
 parser.parse(data)

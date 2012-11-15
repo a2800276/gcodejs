@@ -1,4 +1,6 @@
 
+
+// These are the names of the "events" the state machine will emit
 var EVENTS = {
    BLOCK_START : "BLOCK_START"
   ,BLOCK_END   : "BLOCK_END"
@@ -48,11 +50,6 @@ var ABC = {
   ,SEMI: ";".charCodeAt(0)
 }
 
-var CONST = {
-   re_num: /^[\d-+\.]+$/
-  ,re_pcom: /\(([^)]*)\)/  // comments in parens
-  ,re_scom: /;(.*)$/        // comments ; semicolon to end of line
-}
 /* According to Wikipedia (http://en.wikipedia.org/wiki/G-code) (mostly) */
 var G = { 
    0:   "Rapid positioning"                                                        //  M   T  
@@ -172,35 +169,93 @@ var M = {
   ,99: "Subprogram end"                                         // M || T 
 }
 
-function trim(str) {
-  return str.replace(/^\s+|\s+$/g, '')
-}
-function toLines(data) {
-  var l = trim(data.toString())
-  return l.split(/[\r\n]+/)
-}
 var STATE = {
-   START : 0
-  ,WORD  : 1
-  ,PCOMMENT: 2
-  ,SCOMMENT: 3
-  ,LF: 4
-  ,VALUE_START:5
-  ,VALUE: 6
-  ,VALUE_POST_DOT:7
+   START         :0
+  ,WORD          :1
+  ,PCOMMENT      :2 // parentheszed comments can't be nested
+  ,SCOMMENT      :3 // comments delimited with ';' extend to the end of the line
+  ,LF            :4 // expecting a '\n'
+  ,VALUE_START   :5 // value may start with a '-'
+  ,VALUE         :6
+  ,VALUE_POST_DOT:7 // but can have only one decimal point.
 }
-var GCode = function (cb, halt_on_error) {
+
+/**
+ *   Initialize GCode Statemachine to analyze scripts. 
+ *
+ *   currently doens't handle params ...
+ *
+ *   cb: callback function called while parsing the script. 
+ *
+ *       callback are always passed a hash containing the following:
+ *       {
+ *          ev: (one of EVENTS.ERROR, .BLOCK_START, .BLOCK_END, BLOCK_DEL
+ *               .WORD or .COMMENT)
+ *          line_no: the line currently being processed.
+ *       }
+ *    
+ *   Depending on the type of event, further data is passed to the callback 
+ *   in the hash:
+ *   
+ *   BLOCK_START: called at the beginning of each line, no further data
+ *   BLOCK_END  : called at the end of each line(no further data),
+ *                indicating the block should be ordered and processed.
+ *   BLOCK_DELETE: called on a leading '/'
+ *   ERROR      : called on unexpected input, in case 'continue_on_error'
+ *                (see: cfg, below) is set to true, the statemachine will 
+ *                try to  continue.
+ *
+ *   includes the following additional fields:
+ *      msg: the error message
+ *      state: the STATE (see above) the state machine is currently in.
+ *
+ *   WORD       : called after recognizing a G-Code word, e.g. G00, X12,
+ *                etc. includes the following additional fields:
+ *      code : the letter of the command, e.g. X12 -> "X"
+ *      value: the value of the command, e.g. X12 -> 12
+ *      desc : a human readable interpretation of the command, e.g. 
+ *             G0 -> "rapid positioning" this is not added if the
+ *             no_annotate parameter in `cfg` (see below) is false.
+ *    
+ *   COMMENT   : a comment, includes:
+ *      comment: the text of the comment
+ *   
+ *
+ *   cfg: hash containing configuration
+ *     default values:
+ *
+ *     {continue_on_error : false
+ *      no_annotate       : false}
+ *      
+ *      continue_on_error: whether the `parse` function should
+ *                     return false immediately after encountering
+ *                     an error. A callback with an ERROR event is
+ *                     still emitted
+ *
+ *      no_annotate: whether to add a 'desc' field to emitted WORD 
+ *                events.
+ *      
+ */
+var GCode = function (cb, cfg) {
   var self = this
+  var cfg  = cfg || {}
 
-  var cb = new CB(cb).callback
-  var halt_on_error = halt_on_error
-
+  var cb = cfg.no_annotate ? cb : new CB(cb).callback
+  
+  // the line currently being processed (startes at 0, events emitted
+  // correct this)
   var line_no=0
+  // current state of the machine
   var state = STATE.START
+  // used to collect a comment being parsed
   var comment = ""
+  // used to remember the letter of the command until it can be emitted
+  // along with it's value
   var cmd = ""
+  // used to collect the value of a command.
   var value = ""
 
+  // utility to emit errors
   function error(msg) {
     cb({
        ev      : EVENTS.ERROR
@@ -209,14 +264,18 @@ var GCode = function (cb, halt_on_error) {
       ,state   : state
     }) 
   }
+  // utility to emit comment events
   function cb_comment () {
     cb({
        ev: EVENTS.COMMENT
       ,line_no: line_no+1
       ,comment: comment
     })
+    // reset collector var
     comment = ""
   }
+
+  // utility to emit word events.
   function word() {
     cb({
        ev:   EVENTS.WORD
@@ -224,11 +283,17 @@ var GCode = function (cb, halt_on_error) {
       ,value: parseFloat(value)
       ,line_no: line_no+1
     }) 
-    cmd = ""
+    // reset collector vars
+    cmd   = ""
     value = ""
   }
 
-
+  // Pass in current chunks of data to parse, may be either String
+  // or Buffer (if available). Unless GCode was configured with
+  // `continue_on_error` (see above) it returns true if all the data
+  // could be parsed and falls immediately after emitting an ERROR. In
+  // case `continue_on_error` is set, it will try to continue after
+  // encountering an error. (This will void your warranty)
   this.parse = function parse(data) {
 
     function isUpcaseAtoZ(letter) {
@@ -260,19 +325,17 @@ var GCode = function (cb, halt_on_error) {
       return true
     }
     
-    function checkValue(value) {
-      if (value.match(CONST.re)) {
-        return true
-      }
-      error("invalid value: "+value)
-      return false
-    }
-    
-    data = data.toString()
+    var using_buffer = false
+    if (has_buffer && typeof(data) === "string") {
+      data = new Buffer(data)
+      using_buffer = true
+    } else if (has_buffer) {
+      using_buffer = Buffer.isBuffer(data)
+    }  
 
     for (var i =0; i!=data.length; ++i) {
-      var b = data.charCodeAt(i),
-          b_ = data[i]
+      var b = using_buffer ? data[i] : data.charCodeAt(i)
+          //,b_ = data[i]
       switch(state) {
         case STATE.START:
           cb({ev:     EVENTS.BLOCK_START,
@@ -305,18 +368,20 @@ var GCode = function (cb, halt_on_error) {
               i--
               continue
             default:
-               error("unexpected: "+b_)
-               if (halt_on_error) {
-                return
+               error("unexpected: "+String.fromCharCode(b))
+               if (!cfg.continue_on_error) {
+                return false
                }
           }
           break // STATE.START
+
         case STATE.WORD:
           switch (true) {
+            case isSpace(b): // ignore
+              break
             case isUpcaseAtoZ(b):
               cmd = String.fromCharCode(b)
               state = STATE.VALUE_START
-              value = ""
               break
             case b === ABC.OPARENS:
               state = STATE.PCOMMENT
@@ -332,39 +397,39 @@ var GCode = function (cb, halt_on_error) {
               i--
               continue
             default:
-              error("unexpected: "+b_)
-              if (halt_on_error) {
-                return
+              error("unexpected: "+String.fromCharCode(b))
+              if (!cfg.continue_on_error) {
+                return false
               }
           }
-          break
+          break // STATE.WORD
 
         case STATE.PCOMMENT:
           switch(b) {
             case ABC.OPARENS:
               error("nested comment")
-              if (halt_on_error) {
-                return
+              if (!cfg.continue_on_error) {
+                return false
               }
               break
-            case ABC.CPARENS:
+            case ABC.CPARENS: // closing parens
               cb_comment()
               state = STATE.WORD
               break
             default:
               comment += String.fromCharCode(b)
           }
-          break
+          break // STATE.PCOMMENT
 
         case STATE.SCOMMENT:
           // semicolon comments extend to end of line...
           switch(b) {
             case ABC.CR:
-              comment()
+              cb_comment()
               state = STATE.LF
               break
             case ABC.LF:
-              comment()
+              cb_comment()
               state = STATE.LF
               i--
               continue
@@ -372,12 +437,12 @@ var GCode = function (cb, halt_on_error) {
               comment+=String.fromCharCode(b)
 
           }
-          break
+          break // STATE.SCOMMENT
 
         case STATE.LF:
           if (!check(ABC.LF, b)){
-            if(halt_on_error) {
-              return
+            if(!cfg.continue_on_error) {
+              return false
             }
             // if we're not halting on err, there was
             // only a \r, so some sort of newline, rewind and
@@ -390,7 +455,7 @@ var GCode = function (cb, halt_on_error) {
           })
           line_no++
           state = STATE.START
-          break
+          break // STATE.LF
 
         case STATE.VALUE_START:
           switch(true) {
@@ -407,13 +472,17 @@ var GCode = function (cb, halt_on_error) {
               break
             default:
               error("not a valid value: "+String.fromCharCode(b))
+              if (!cfg.continue_on_error) {
+                return false
+              }
           }
-          break
+          break // STATE.VALUE_START
 
         case STATE.VALUE:
           switch(true) {
             case isSpace(b):
               break
+            // actual values ...
             case isDigit(b):
               value += String.fromCharCode(b)
               state = STATE.VALUE
@@ -422,6 +491,7 @@ var GCode = function (cb, halt_on_error) {
               value += String.fromCharCode(b)
               state = STATE.VALUE_POST_DOT
               break
+            // line ends ...
             case b === ABC.CR:
               word()
               state = STATE.LF
@@ -431,11 +501,13 @@ var GCode = function (cb, halt_on_error) {
               state = STATE.LF
               i--
               continue
+            // new word starts ...
             case isUpcaseAtoZ(b):
               word()
               state = STATE.WORD
               i--
               continue
+            // comment starts ...
             case b === ABC.OPARENS:
               word()
               state = STATE.PCOMMENT
@@ -446,13 +518,18 @@ var GCode = function (cb, halt_on_error) {
               break
             default:
               error("not a valid value: "+String.fromCharCode(b))
+              if (!cfg.continue_on_error) {
+                return false
+              }
           }
-          break
+          break // STATE.VALUE
 
         case STATE.VALUE_POST_DOT:
           switch(true) {
             case isSpace(b):
               break
+            // after a decimal point has been encountered in a 
+            // value, only digits are legal.
             case isDigit(b):
               value += String.fromCharCode(b)
               state = STATE.VALUE
@@ -481,13 +558,20 @@ var GCode = function (cb, halt_on_error) {
               break
             default:
               error("not a valid value: "+String.fromCharCode(b))
+              if (!cfg.continue_on_error) {
+                return false
+              }
           }
           break
         default:
           error("invalid state:"+state)
+          if (!cfg.continue_on_error) {
+            return false
+          }
       } // switch state
 
     } // for
+    return true
   } // parse
 }
 
@@ -496,7 +580,9 @@ var GCode = function (cb, halt_on_error) {
 
 var p = console.log
 
-
+// this is a decorator (or whatever) used to add a human readable
+// describtion to word events being emitted. It's use is controlled
+// by the no_annotate parameter in `cfg` when instantiating the parser.
 var CB = function (cb) {
   this.cb = cb
   var self = this
@@ -507,6 +593,7 @@ var CB = function (cb) {
       case EVENTS.COMMENT    :
       case EVENTS.BLOCK_START:
       case EVENTS.BLOCK_END  :
+      case EVENTS.BLOCK_DEL  :
         break
       case EVENTS.WORD       :
         enrichWord(code)
@@ -604,7 +691,16 @@ var CB = function (cb) {
   
 }
 
-
+var has_buffer
+(function check_has_buffer() {
+  // check whether we are being executed from within, let's say, node.
+  try {
+    new Buffer("")
+    has_buffer = true
+  } catch(e) {
+    has_buffer = false
+  }
+})()
 
 
 
