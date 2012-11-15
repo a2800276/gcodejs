@@ -250,7 +250,7 @@ var GCode = function (cb, cfg) {
   // used to collect a comment being parsed
   var comment = ""
   // used to remember the letter of the command until it can be emitted
-  // along with it's value
+  // along with its value
   var cmd = ""
   // used to collect the value of a command.
   var value = ""
