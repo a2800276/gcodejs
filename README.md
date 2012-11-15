@@ -44,8 +44,8 @@ describing one of the following events:
 Data passed to the callback is a hash an will always contain the
 following parameters:
 
-- ev : one of `gcode.Events.BLOCK_START`, `...BLOCK_END`, (...)
-- line_no : the line currently being processed (line of the file, not
+- `ev` : one of `gcode.Events.BLOCK_START`, `...BLOCK_END`, (...)
+- `line_no` : the line currently being processed (line of the file, not
   the line indicated by `N` words.
 
 ERROR events also have the following parameters: `msg` the error message
@@ -65,14 +65,15 @@ comment, stripped of comment delimiters.
 The optinal `cfg` parameter that may be passed to the constructor is a
 hash which may currently contain two configuration options:
 
-- continue_on_err : don't return `false` from `parse` after an error has
+- `continue_on_err` : don't return `false` from `parse` after an error has
   been emitted, instead, try to recover (this may void your warranty)
-- no_annotate     : don't append the `desc` parameter to word events.
+- `no_annotate`     : don't append the `desc` parameter to word events.
 
 ## Motivation
 
-This will be part of a JS based CNC control for the Anykey[1]
-/Anycnc[2]
+This will be part of a JS based CNC control for the [Anykey][1]
+/[Anycnc][2]
+
 ## TODO
 
 Write a proper example driver for anycnc ...
@@ -86,13 +87,13 @@ MIT
 
 ## FILES
 
-README.md             : this file
-anycnc.js             : example drive, extremly wip
-test                  : test fixtures
-make_json_fixtures.js : pre-parse fixture data for test
-parser.js             : the actual parser
-test_gcode.js         : run tests.
+    README.md             : this file
+    anycnc.js             : example drive, extremly wip
+    test/                 : test fixtures
+    make_json_fixtures.js : pre-parse fixture data for test
+    parser.js             : the actual parser
+    test_gcode.js         : run tests.
 
 
-[1] http://www.anykey0x.de
-[2] http://blog.anykey0x.de/?p=60
+[1]: http://www.anykey0x.de
+[2]: http://blog.anykey0x.de/?p=60
