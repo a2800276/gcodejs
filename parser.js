@@ -50,7 +50,9 @@ var ABC = {
   ,SEMI: ";".charCodeAt(0)
 }
 
-/* According to Wikipedia (http://en.wikipedia.org/wiki/G-code) (mostly) */
+/* According to Wikipedia (http://en.wikipedia.org/wiki/G-code) (mostly) 
+ * M is milling, T is turning, in case of conflict, I prefered milling
+ * */
 var G = { 
    0:   "Rapid positioning"                                                        //  M   T  
   ,1:   "Linear interpolation"                                                     //  M  T 
