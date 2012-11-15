@@ -1,0 +1,16 @@
+{
+  "name": "gcodejs",
+  "author": "Tim Becker <tim@kuriositaet.de>",
+  "version": "0.0.1",
+  "description": "a module for processing gcode",
+  "keywords": [
+    "cnc",
+    "gcode"
+  ],
+  "main": "parser.js",
+  "dependencies": {},
+  "devDependencies": {},
+  "engines": {
+    "node": "*"
+  }
+}
