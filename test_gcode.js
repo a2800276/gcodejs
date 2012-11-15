@@ -17,6 +17,7 @@ function perr(data){
   }
 }
 
+// test to make sure that all test gcode parses without errors
 function test(fn) {
   if (fn.match(/\.(cnc|tap)$/)) {
     fs.readFile(fn, function(err, data) {
@@ -31,6 +32,8 @@ function test(fn) {
   }
 }
 
+
+// deep compare utility for json fixture tests, see below
 
 function compare(fn, should, is) {
   if (should.length !== is.length) {
@@ -49,6 +52,8 @@ function compare(fn, should, is) {
   }
 }
 
+// test to compare the stream of emitted events to a dry run of pre
+// parsed events.
 function test_json(fn) {
   
   if (fn.match(/\.(cnc|tap)$/)) {
